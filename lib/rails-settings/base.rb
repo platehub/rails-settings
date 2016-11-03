@@ -7,21 +7,30 @@ module RailsSettings
                  :autosave   => true,
                  :dependent  => :delete_all,
                  :class_name => self.setting_object_class_name
+             
+        self.setting_object_class_names.each_pair do |key_name, klass|
+          has_many  "#{key_name}_setting_objects".to_sym,
+                    -> {where(var: key_name)},
+                    :as         => :target,
+                    :autosave   => true,
+                    :dependent  => :delete_all,
+                    :class_name => klass
+        end
 
         def settings(var)
           raise ArgumentError unless var.is_a?(Symbol)
           raise ArgumentError.new("Unknown key: #{var}") unless self.class.default_settings[var]
 
           if RailsSettings.can_protect_attributes?
-            setting_objects.detect { |s| s.var == var.to_s } || setting_objects.build({ :var => var.to_s }, :without_protection => true)
+            scoped_setting_objects(var).detect { |s| s.var == var.to_s } || scoped_setting_objects(var).build({ :var => var.to_s }, :without_protection => true)
           else
-            setting_objects.detect { |s| s.var == var.to_s } || setting_objects.build(:var => var.to_s, :target => self)
+            scoped_setting_objects(var).detect { |s| s.var == var.to_s } || scoped_setting_objects(var).build(:var => var.to_s, :target => self)
           end
         end
 
         def settings=(value)
           if value.nil?
-            setting_objects.each(&:mark_for_destruction)
+            scoped_setting_objects(var).each(&:mark_for_destruction)
           else
             raise ArgumentError
           end
@@ -29,7 +38,7 @@ module RailsSettings
 
         def settings?(var=nil)
           if var.nil?
-            setting_objects.any? { |setting_object| !setting_object.marked_for_destruction? && setting_object.value.present? }
+            scoped_setting_objects(var).any? { |setting_object| !setting_object.marked_for_destruction? && setting_object.value.present? }
           else
             settings(var).value.present?
           end
@@ -41,6 +50,12 @@ module RailsSettings
             settings_hash[var] = settings_hash[var].merge(settings(var.to_sym).value)
           end
           settings_hash
+        end
+        
+        private
+        
+        def scoped_setting_objects(var)
+          send("#{var}_setting_objects")
         end
       end
     end
