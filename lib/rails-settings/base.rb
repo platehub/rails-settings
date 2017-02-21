@@ -7,7 +7,7 @@ module RailsSettings
                  :autosave   => true,
                  :dependent  => :delete_all,
                  :class_name => self.setting_object_class_name
-             
+
         self.setting_object_class_names.each_pair do |key_name, klass|
           has_many  "#{key_name}_setting_objects".to_sym,
                     -> {where(var: key_name)},
@@ -21,10 +21,17 @@ module RailsSettings
           raise ArgumentError unless var.is_a?(Symbol)
           raise ArgumentError.new("Unknown key: #{var}") unless self.class.default_settings[var]
 
-          if RailsSettings.can_protect_attributes?
-            scoped_setting_objects(var).detect { |s| s.var == var.to_s } || scoped_setting_objects(var).build({ :var => var.to_s }, :without_protection => true)
+          setting_object = setting_objects.detect{ |s| s.var == var.to_s }
+          if setting_object
+            setting_klass = self.class.setting_object_class_names[var]
+            setting_object = setting_object.becomes(setting_klass.safe_constantize) if setting_klass != self.class.setting_object_class_name
+            setting_object
           else
-            scoped_setting_objects(var).detect { |s| s.var == var.to_s } || scoped_setting_objects(var).build(:var => var.to_s, :target => self)
+            if RailsSettings.can_protect_attributes?
+              scoped_setting_objects(var).build({ :var => var.to_s }, :without_protection => true)
+            else
+              scoped_setting_objects(var).build(:var => var.to_s, :target => self)
+            end
           end
         end
 
@@ -51,9 +58,9 @@ module RailsSettings
           end
           settings_hash
         end
-        
+
         private
-        
+
         def scoped_setting_objects(var)
           send("#{var}_setting_objects")
         end
