@@ -88,9 +88,6 @@ module RailsSettings
         private
 
         def autosave_settings
-          puts setting_objects.inspect
-          puts setting_objects.with_own_class.inspect
-          puts "==="
           for setting in setting_objects.with_own_class
             setting.save if setting.changed?
           end

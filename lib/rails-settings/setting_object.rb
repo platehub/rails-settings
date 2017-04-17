@@ -28,8 +28,6 @@ module RailsSettings
       result = super
       setting_klass = result.class.setting_object_class_names[var]
       result = result.becomes(setting_klass.safe_constantize) if setting_klass != self.class.setting_object_class_name
-      puts result.inspect
-      puts "------"
       result
     end
 
