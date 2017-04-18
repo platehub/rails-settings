@@ -32,7 +32,7 @@ module RailsSettings
                     -> {where(var: key_name)},
                     :as         => :target,
                     # :autosave   => true,
-                    :dependent  => :delete_all,
+                    # :dependent  => :delete_all,
                     :class_name => klass
         end
 
