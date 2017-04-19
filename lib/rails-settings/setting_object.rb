@@ -24,13 +24,6 @@ module RailsSettings
     REGEX_SETTER = /\A([a-z]\w+)=\Z/i
     REGEX_GETTER = /\A([a-z]\w+)\Z/i
 
-    def self.detect(&block)
-      result = super
-      setting_klass = result.class.setting_object_class_names[var]
-      result = result.becomes(setting_klass.safe_constantize) if setting_klass != self.class.setting_object_class_name
-      result
-    end
-
     def respond_to?(method_name, include_priv=false)
       super || method_name.to_s =~ REGEX_SETTER || _setting?(method_name)
     end

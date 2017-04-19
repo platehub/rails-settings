@@ -27,15 +27,16 @@ module RailsSettings
           end
         end
 
-        self.setting_object_class_names.each_pair do |key_name, klass|
+        self.setting_object_class_names.each do |key_name, klass|
           has_many  "#{key_name}_setting_objects".to_sym,
                     -> {where(var: key_name)},
                     :as         => :target,
-                    # :autosave   => true,
+                    :autosave   => true,
                     # :dependent  => :delete_all,
                     :class_name => klass
         end
 
+        validate :validate_settings
         after_save :autosave_settings
 
         def settings(var)
@@ -71,7 +72,7 @@ module RailsSettings
 
         def settings?(var=nil)
           if var.nil?
-            scoped_setting_objects(var).any? { |setting_object| !setting_object.marked_for_destruction? && setting_object.value.present? }
+            setting_objects.any? { |setting_object| !setting_object.marked_for_destruction? && setting_object.value.present? }
           else
             settings(var).value.present?
           end
@@ -88,8 +89,14 @@ module RailsSettings
         private
 
         def autosave_settings
-          for setting in setting_objects.with_own_class
+          for setting in self.setting_objects.with_own_class
             setting.save if setting.changed?
+          end
+        end
+
+        def validate_settings
+          for setting in self.setting_objects.with_own_class.delete_if(&:valid?)
+            setting.errors.messages.each{|key,msgs| msgs.each{|msg| self.errors.add("setting_objects.#{key.to_sym}".to_sym, msg) } }
           end
         end
 
