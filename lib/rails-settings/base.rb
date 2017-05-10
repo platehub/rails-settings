@@ -8,8 +8,8 @@ module RailsSettings
                  :dependent  => :delete_all,
                  :class_name => self.setting_object_class_name do
           #
-          def detect(&block)
-            result = super
+          def detect_with_class(&block)
+            result = to_a.detect(&block)
             if result
               owner_class = proxy_association.owner.class
               setting_klass = owner_class.setting_object_class_names[result.var.to_sym]
@@ -43,7 +43,7 @@ module RailsSettings
           raise ArgumentError unless var.is_a?(Symbol)
           raise ArgumentError.new("Unknown key: #{var}") unless self.class.default_settings[var]
 
-          # setting_object = setting_objects.detect{ |s| s.var == var.to_s }
+          # setting_object = setting_objects.detect_with_class{ |s| s.var == var.to_s }
           # if setting_object
           #   setting_klass = self.class.setting_object_class_names[var]
           #   setting_object = setting_object.becomes(setting_klass.safe_constantize) if setting_klass != self.class.setting_object_class_name
@@ -56,9 +56,9 @@ module RailsSettings
           #   end
           # end
           if RailsSettings.can_protect_attributes?
-            setting_objects.detect { |s| s.var == var.to_s } || scoped_setting_objects(var).build({ :var => var.to_s }, :without_protection => true)
+            setting_objects.detect_with_class { |s| s.var == var.to_s } || scoped_setting_objects(var).build({ :var => var.to_s }, :without_protection => true)
           else
-            setting_objects.detect { |s| s.var == var.to_s } || scoped_setting_objects(var).build(:var => var.to_s, :target => self)
+            setting_objects.detect_with_class { |s| s.var == var.to_s } || scoped_setting_objects(var).build(:var => var.to_s, :target => self)
           end
         end
 
