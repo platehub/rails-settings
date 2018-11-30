@@ -9,7 +9,7 @@ Ruby gem to handle settings for ActiveRecord instances by storing them as serial
 ## Requirements
 
 * Ruby 1.9.3 or newer
-* Rails 3.1 or newer (including Rails 4.x and Rails 5.x)
+* Rails 3.1 or newer (including Rails 5.2)
 
 
 ## Installation
@@ -118,7 +118,7 @@ User.without_settings
 # => all users without having any setting
 
 User.with_settings_for(:calendar)
-# => all users having a setting for 'calender'
+# => all users having a setting for 'calendar'
 
 User.without_settings_for(:calendar)
 # => all users without having settings for 'calendar'
@@ -146,6 +146,6 @@ See https://github.com/ledermann/rails-settings/releases
 
 MIT License
 
-Copyright (c) 2012-2017 [Georg Ledermann](http://www.georg-ledermann.de)
+Copyright (c) 2012-2018 [Georg Ledermann](http://www.georg-ledermann.de)
 
 This gem is a complete rewrite of [rails-settings](https://github.com/Squeegy/rails-settings) by [Alex Wayne](https://github.com/Squeegy)
