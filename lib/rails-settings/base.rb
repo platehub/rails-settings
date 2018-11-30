@@ -43,28 +43,18 @@ module RailsSettings
           raise ArgumentError unless var.is_a?(Symbol)
           raise ArgumentError.new("Unknown key: #{var}") unless self.class.default_settings[var]
 
-          # setting_object = setting_objects.detect_with_class{ |s| s.var == var.to_s }
-          # if setting_object
-          #   setting_klass = self.class.setting_object_class_names[var]
-          #   setting_object = setting_object.becomes(setting_klass.safe_constantize) if setting_klass != self.class.setting_object_class_name
-          #   setting_object
-          # else
-          #   if RailsSettings.can_protect_attributes?
-          #     scoped_setting_objects(var).build({ :var => var.to_s }, :without_protection => true)
-          #   else
-          #     scoped_setting_objects(var).build(:var => var.to_s, :target => self)
-          #   end
-          # end
           if RailsSettings.can_protect_attributes?
             setting_objects.detect_with_class { |s| s.var == var.to_s } || scoped_setting_objects(var).build({ :var => var.to_s }, :without_protection => true)
           else
-            setting_objects.detect_with_class { |s| s.var == var.to_s } || scoped_setting_objects(var).build(:var => var.to_s, :target => self)
+            setting_objects.detect_with_class { |s| s.var == var.to_s } || scoped_setting_objects(var).build(:var => var.to_s)
           end
         end
 
         def settings=(value)
           if value.nil?
-            scoped_setting_objects(var).each(&:mark_for_destruction)
+            self.class.setting_object_class_names.keys.each do |key_name|
+              scoped_setting_objects(key_name).each(&:mark_for_destruction)
+            end
           else
             raise ArgumentError
           end
