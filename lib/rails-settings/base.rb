@@ -5,7 +5,7 @@ module RailsSettings
         has_many :setting_objects,
                  :as         => :target,
                 #  :autosave   => true,
-                 :dependent  => :delete_all,
+                 :dependent  => :destroy,
                  :class_name => self.setting_object_class_name do
           #
           def detect_with_class(&block)
