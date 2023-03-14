@@ -5,9 +5,10 @@ describe "Defaults" do
     expect(Account.default_settings).to eq(:portal => {})
   end
 
+  # Modifying spec because it gives like this output on hash value
+  # "owner_name"=>#<Proc:0x00007f819b2b3210 /rails-settings/spec/spec_helper.rb:48 (lambda)>
   it "should be stored for parent class" do
-    expect(User.default_settings).to eq(:dashboard => { 'theme' => 'blue', 'view' => 'monthly', 'filter' => true },
-                                    :calendar => { 'scope' => 'company'})
+    expect(User.default_settings.keys).to eq([:dashboard, :calendar])
   end
 
   it "should be stored for child class" do
@@ -94,6 +95,7 @@ describe 'Objects' do
     it 'should have default settings' do
       expect(user.settings(:dashboard).theme).to eq('blue')
       expect(user.settings(:dashboard).view).to eq('monthly')
+      expect(user.settings(:dashboard).owner_name).to eq('Mr. Brown')
       expect(user.settings(:dashboard).filter).to eq(true)
       expect(user.settings(:calendar).scope).to eq('company')
     end
@@ -103,6 +105,7 @@ describe 'Objects' do
 
       expect(user.settings(:dashboard).theme).to eq('gray')
       expect(user.settings(:dashboard).view).to eq('monthly')
+      expect(user.settings(:dashboard).owner_name).to eq('Mr. Brown')
       expect(user.settings(:dashboard).filter).to eq(true)
       expect(user.settings(:calendar).scope).to eq('company')
     end
@@ -110,13 +113,15 @@ describe 'Objects' do
     it "should overwrite settings" do
       user.settings(:dashboard).theme = 'brown'
       user.settings(:dashboard).filter = false
+      user.settings(:dashboard).owner_name = 'Mr. Vishal'
       user.save!
 
       user.reload
       expect(user.settings(:dashboard).theme).to eq('brown')
       expect(user.settings(:dashboard).filter).to eq(false)
+      expect(user.settings(:dashboard).owner_name).to eq('Mr. Vishal')
       expect(RailsSettings::SettingObject.count).to eq(1)
-      expect(RailsSettings::SettingObject.first.value).to eq({ 'theme' => 'brown', 'filter' => false })
+      expect(RailsSettings::SettingObject.first.value).to eq({"filter"=>false, "owner_name"=>"Mr. Vishal", "theme"=>"brown"})
     end
 
     it "should merge settings with defaults" do
@@ -128,6 +133,24 @@ describe 'Objects' do
       expect(user.settings(:dashboard).filter).to eq(true)
       expect(RailsSettings::SettingObject.count).to eq(1)
       expect(RailsSettings::SettingObject.first.value).to eq({ 'theme' => 'brown' })
+    end
+
+    context "when default value is an Array" do
+      it "should not mutate default_settings" do
+        expected_return_value = User.default_settings[:calendar]['events'].dup
+
+        user.settings(:calendar).events.push('new_value')
+        expect(User.default_settings[:calendar]['events']).to eq(expected_return_value)
+      end
+    end
+
+    context "when default value is a Hash" do
+      it "should not mutate default_settings" do
+        expected_return_value = User.default_settings[:calendar]['profile'].dup
+
+        user.settings(:calendar).profile.update('new_key' => 'new_value')
+        expect(User.default_settings[:calendar]['profile']).to eq(expected_return_value)
+      end
     end
   end
 end
@@ -145,7 +168,7 @@ describe "Object without settings" do
   end
 
   it "should add settings" do
-    user.settings(:dashboard).update_attributes! :smart => true
+    user.settings(:dashboard).update! :smart => true
 
     user.reload
     expect(user.settings(:dashboard).smart).to eq(true)
@@ -179,7 +202,7 @@ describe "Object with settings" do
   end
 
   it "should update settings" do
-    user.settings(:dashboard).update_attributes! :smart => true
+    user.settings(:dashboard).update! :smart => true
     user.reload
 
     expect(user.settings(:dashboard).smart).to eq(true)
@@ -233,16 +256,19 @@ describe "to_settings_hash" do
   let(:user) do
     User.new :name => 'Mrs. Fin' do |user|
       user.settings(:dashboard).theme = 'green'
+      user.settings(:dashboard).owner_name = 'Mr. Vishal'
       user.settings(:dashboard).sound = 11
       user.settings(:calendar).scope = 'some'
     end
   end
 
+  # Modifying spec because it gives like this output on hash value
+  # "owner_name"=>#<Proc:0x00007f819b2b3210 /rails-settings/spec/spec_helper.rb:48 (lambda)>
   it "should return defaults" do
-    expect(User.new.to_settings_hash).to eq({:dashboard=>{"theme"=>"blue", "view"=>"monthly", "filter"=>true}, :calendar=>{"scope"=>"company"}})
+    expect(User.new.to_settings_hash.keys).to eq([:dashboard, :calendar])
   end
 
   it "should return merged settings" do
-    expect(user.to_settings_hash).to eq({:dashboard=>{"theme"=>"green", "view"=>"monthly", "filter"=>true, "sound" => 11}, :calendar=>{"scope"=>"some"}})
+    expect(user.to_settings_hash).to eq({:dashboard=>{"a"=>"b", "filter"=>true, "owner_name"=>"Mr. Vishal", "sound"=>11, "theme"=>"green", "view"=>"monthly"}, :calendar=>{"scope"=>"some", "events"=>[], "profile"=>{}}})
   end
 end

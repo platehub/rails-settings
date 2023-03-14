@@ -22,6 +22,7 @@ describe RailsSettings::SettingObject do
       it "should respond to setters" do
         expect(new_setting_object).to respond_to(:foo=)
         expect(new_setting_object).to respond_to(:bar=)
+        expect(new_setting_object).to respond_to(:x=)
       end
 
       it "should not respond to some getters" do
@@ -44,18 +45,24 @@ describe RailsSettings::SettingObject do
       it "should return nil for unknown attribute" do
         expect(new_setting_object.foo).to eq(nil)
         expect(new_setting_object.bar).to eq(nil)
+        expect(new_setting_object.c).to eq(nil)
       end
 
       it "should return defaults" do
         expect(new_setting_object.theme).to eq('blue')
         expect(new_setting_object.view).to eq('monthly')
         expect(new_setting_object.filter).to eq(true)
+        expect(new_setting_object.a).to eq('b')
       end
 
       it "should return defaults when using `try`" do
         expect(new_setting_object.try(:theme)).to eq('blue')
         expect(new_setting_object.try(:view)).to eq('monthly')
         expect(new_setting_object.try(:filter)).to eq(true)
+      end
+
+      it "should return value from target method if proc is a default value" do
+        expect(new_setting_object.owner_name).to eq('Mr. Pink')
       end
 
       it "should store different objects to value hash" do
@@ -103,9 +110,9 @@ describe RailsSettings::SettingObject do
     end
   end
 
-  describe "update_attributes" do
+  describe "update" do
     it 'should save' do
-      expect(new_setting_object.update_attributes(:foo => 42, :bar => 'string')).to be_truthy
+      expect(new_setting_object.update(:foo => 42, :bar => 'string')).to be_truthy
       new_setting_object.reload
 
       expect(new_setting_object.foo).to eq(42)
@@ -115,12 +122,12 @@ describe RailsSettings::SettingObject do
     end
 
     it 'should not save blank hash' do
-      expect(new_setting_object.update_attributes({})).to be_truthy
+      expect(new_setting_object.update({})).to be_truthy
     end
 
     if RailsSettings.can_protect_attributes?
       it 'should not allow changing protected attributes' do
-        new_setting_object.update_attributes!(:var => 'calendar', :foo => 42)
+        new_setting_object.update!(:var => 'calendar', :foo => 42)
 
         expect(new_setting_object.var).to eq('dashboard')
         expect(new_setting_object.foo).to eq(42)
